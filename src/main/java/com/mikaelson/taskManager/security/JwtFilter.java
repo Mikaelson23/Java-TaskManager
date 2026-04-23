@@ -8,61 +8,41 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
-    private final TokenService tokenService;
-    private final UserRepository userRepository;
+    private TokenService tokenService;
+    private UserRepository userRepository;
 
-    public JwtFilter(TokenService tokenService, UserRepository userRepository) {
+    public JwtFilter(TokenService tokenService, UserRepository userRepository){
         this.tokenService = tokenService;
         this.userRepository = userRepository;
     }
-
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
-
-        String token = recoverToken(request);
-
-        if (token != null) {
-            String login = tokenService.getSubject(token);
-
-            User user = userRepository.findByUserLogin(login)
-                    .orElseThrow(() ->
-                            new RuntimeException("Usuário não encontrado: " + login));
-
-            Authentication authentication =
-                    new UsernamePasswordAuthenticationToken(user, null, List.of());
-
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        var token = this.recoveryToken(request);
+        if(token != null){
+            var login = tokenService.validatingToken(token);
+            UserDetails user = userRepository.findByUserLogin(login);
+            var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-
-        filterChain.doFilter(request, response);
+        filterChain.doFilter(request,response);
     }
 
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();
-        return path.equals("/user/login") || path.equals("/user/register");
-    }
-
-    private String recoverToken(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
-        return authHeader.substring(7);
+    private String recoveryToken(HttpServletRequest request) {
+        var authHeader = request.getHeader("Authorization");
+        if(authHeader == null){
+            return null;
+        }
+        return authHeader.replace("Bearer ","");
     }
 }
 

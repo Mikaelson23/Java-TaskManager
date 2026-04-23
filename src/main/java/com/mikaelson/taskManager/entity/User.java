@@ -6,6 +6,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.servlet.handler.UserRoleAuthorizationInterceptor;
 
 import java.util.Collection;
 import java.util.List;
@@ -24,16 +25,7 @@ public class User implements UserDetails {
     private String userPassword;
     @OneToMany(mappedBy = "user")
     private List<Task> tasks;
-
-    private String role = "USER";
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
+    private UserRole role;
 
     public Long getId() {
         return id;
@@ -100,5 +92,9 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return UserDetails.super.isEnabled();
+    }
+
+    public void setRole(UserRole userRole) {
+        this.role = userRole;
     }
 }

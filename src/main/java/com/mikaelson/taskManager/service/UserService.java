@@ -1,6 +1,7 @@
 package com.mikaelson.taskManager.service;
 
 import com.mikaelson.taskManager.entity.User;
+import com.mikaelson.taskManager.entity.UserRole;
 import com.mikaelson.taskManager.repository.UserRepository;
 import com.mikaelson.taskManager.dto.request.UserLoginRequest;
 import com.mikaelson.taskManager.dto.request.UserRegisterRecord;
@@ -29,14 +30,9 @@ public class UserService {
     }
 
     public String login(UserLoginRequest dto) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        dto.userLogin(),
-                        dto.userPassword()
-                )
-        );
-
-        return tokenService.generateToken((User) Objects.requireNonNull(authentication.getPrincipal()));
+        var userPassword = new UsernamePasswordAuthenticationToken(dto.userLogin(),dto.userPassword());
+        var authentication = authenticationManager.authenticate(userPassword);
+        return tokenService.generateToken((User) authentication.getPrincipal());
     }
 
     public UserRegisterResponse registerUser(UserRegisterRecord userDto) {
@@ -44,6 +40,7 @@ public class UserService {
             throw new RuntimeException("Usuario ou senha invalida");
         }
         User user = new User();
+        user.setRole(UserRole.USER);
         user.setUserLogin(userDto.login());
         user.setName(userDto.userName());
         user.setUserPassword(passwordEncoder.encode(userDto.password()));

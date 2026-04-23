@@ -1,17 +1,16 @@
 package com.mikaelson.taskManager.service;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.mikaelson.taskManager.entity.User;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.security.Key;
-import java.util.Date;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Service
 public class TokenService {
@@ -19,46 +18,32 @@ public class TokenService {
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expiration}")
-    private long expiration;
-
     public String generateToken(User user) {
-
-        Key key = Keys.hmacShaKeyFor(
-                Decoders.BASE64.decode(secret)
-        );
-
-        return Jwts.builder()
-                .setSubject(user.getUserLogin())
-                .claim("role", user.getAuthorities().iterator().next().getAuthority())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    public boolean isTokenValid(String token) {
         try {
-            getClaims(token);
-            return true;
-        } catch (Exception e) {
-            return false;
+            Algorithm auth = Algorithm.HMAC256(secret);
+            return JWT.create().withIssuer("auth-api")
+                    .withSubject(user.getUserLogin())
+                    .withExpiresAt(getExpirationDate())
+                    .sign(auth);
+        } catch (JWTCreationException exception) {
+            throw new RuntimeException("Error while generating token", exception);
         }
     }
+    public Instant getExpirationDate(){
+            return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
+    }
+    public String validatingToken(String token){
+        try{
+            Algorithm auth = Algorithm.HMAC256(secret);
+            return JWT.require(auth)
+                    .withIssuer("auth-api")
+                    .build()
+                    .verify(token)
+                    .getSubject();
+        }catch (JWTVerificationException exception){
+            return "";
+        }
 
-    public String getSubject(String token) {
-        return getClaims(token).getSubject();
     }
 
-    private Claims getClaims(String token) {
-        Key key = Keys.hmacShaKeyFor(
-                Decoders.BASE64.decode(secret)
-        );
-
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }
 }
