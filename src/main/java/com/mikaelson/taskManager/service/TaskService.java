@@ -7,10 +7,13 @@ import com.mikaelson.taskManager.dto.response.TaskResponseRecord;
 import com.mikaelson.taskManager.dto.response.TaskStatusResponse;
 import com.mikaelson.taskManager.entity.Status;
 import com.mikaelson.taskManager.entity.Task;
+import com.mikaelson.taskManager.entity.UserRole;
 import com.mikaelson.taskManager.exceptions.TaskNotFoundException;
+import com.mikaelson.taskManager.exceptions.UserNotHasAuthorityException;
 import com.mikaelson.taskManager.repository.TaskRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,23 +23,29 @@ public class TaskService {
 
     private final TaskRepository repository;
 
+
     public TaskService(TaskRepository repository){
         this.repository = repository;
+
     }
 
-    public TaskCreateResponse createTask(TaskCreateRecord dto){
+    public TaskCreateResponse createTask(Authentication auth, TaskCreateRecord dto){
         if(dto == null){
             throw new NullPointerException();
         }
+        if(auth.isAuthenticated() && auth.getAuthorities().contains("ROLE_ADMIN")){
+            Task task = new Task();
+            task.setTitle(dto.title());
+            task.setDescription(dto.description());
+            task.setPriority(dto.priority());
+            task.setLimitDate(dto.limitDate());
+            task.setStatus(Status.Pending);
+            repository.save(task);
+            return toResponseCreateDTO(task);
+        }
+        throw new UserNotHasAuthorityException(auth.getName());
 
-        Task task = new Task();
-        task.setTitle(dto.title());
-        task.setDescription(dto.description());
-        task.setPriority(dto.priority());
-        task.setLimitDate(dto.limitDate());
-        task.setStatus(Status.Pending);
-        repository.save(task);
-        return toResponseCreateDTO(task);
+
     }
 
     public List<TaskResponseRecord> getTasks(){

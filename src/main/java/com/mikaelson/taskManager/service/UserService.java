@@ -8,7 +8,9 @@ import com.mikaelson.taskManager.dto.request.UserRegisterRecord;
 import com.mikaelson.taskManager.dto.response.UserRegisterResponse;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Service;
 
 
@@ -32,6 +34,7 @@ public class UserService {
         var authentication = authenticationManager.authenticate(userPassword);
         return tokenService.generateToken((User) authentication.getPrincipal());
     }
+
 
     public UserRegisterResponse registerUser(UserRegisterRecord userDto) {
         if(repository.existsByUserLogin(userDto.login())){

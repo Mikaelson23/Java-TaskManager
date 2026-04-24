@@ -27,14 +27,18 @@ public class JwtFilter extends OncePerRequestFilter {
     }
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        var token = this.recoveryToken(request);
-        if(token != null){
-            var login = tokenService.validatingToken(token);
-            UserDetails user = userRepository.findByUserLogin(login);
-            var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        try{
+            var token = this.recoveryToken(request);
+            if(token != null){
+                var login = tokenService.validatingToken(token);
+                UserDetails user = userRepository.findByUserLogin(login);
+                var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+            filterChain.doFilter(request,response);
+        }catch (NullPointerException exception){
         }
-        filterChain.doFilter(request,response);
+
     }
 
     private String recoveryToken(HttpServletRequest request) {
