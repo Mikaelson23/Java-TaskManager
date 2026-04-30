@@ -6,20 +6,17 @@ import com.mikaelson.taskManager.dto.response.TaskResponse;
 import com.mikaelson.taskManager.dto.response.TaskResponseRecord;
 import com.mikaelson.taskManager.dto.response.TaskStatusResponse;
 import com.mikaelson.taskManager.service.TaskService;
-import com.mikaelson.taskManager.service.UserService;
-import org.springframework.http.HttpHeaders;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.attribute.UserPrincipalNotFoundException;
 import java.util.List;
 
 
-@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 public class TaskController {
 
@@ -76,8 +73,8 @@ public class TaskController {
     }
 
     @DeleteMapping("/task/delete/{id}")
-    public ResponseEntity<Void> taskDelete(@PathVariable Long id){
-        service.deleteTask(id);
+    public ResponseEntity<Void> taskDelete(Authentication auth, @PathVariable Long id){
+        service.deleteTask(auth,id);
         return ResponseEntity.noContent().build();
     }
 

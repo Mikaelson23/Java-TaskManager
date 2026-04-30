@@ -32,7 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/auth/user/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/user/register").permitAll()
-                        .requestMatchers("/task/**").hasRole("USER")
+                        .requestMatchers("/task/**").hasAnyRole("USER","MANAGER")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -7,12 +7,10 @@ import com.mikaelson.taskManager.dto.response.TaskResponseRecord;
 import com.mikaelson.taskManager.dto.response.TaskStatusResponse;
 import com.mikaelson.taskManager.entity.Status;
 import com.mikaelson.taskManager.entity.Task;
-import com.mikaelson.taskManager.entity.UserRole;
 import com.mikaelson.taskManager.exceptions.TaskNotFoundException;
 import com.mikaelson.taskManager.exceptions.UserNotHasAuthorityException;
 import com.mikaelson.taskManager.repository.TaskRepository;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -33,7 +31,9 @@ public class TaskService {
         if(dto == null){
             throw new NullPointerException();
         }
-        if(auth.isAuthenticated() && auth.getAuthorities().contains("ROLE_ADMIN")){
+        boolean isManager = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER"));
+        if(auth.isAuthenticated() && isManager){
             Task task = new Task();
             task.setTitle(dto.title());
             task.setDescription(dto.description());
@@ -103,9 +103,14 @@ public class TaskService {
         return taskDTO;
     }
 
-    public void deleteTask(Long id) {
-        Task task = repository.findById(id).orElseThrow(()-> new TaskNotFoundException(id));
-        repository.delete(task);
+    public void deleteTask(Authentication auth, Long id) {
+        boolean isManager = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER"));
+        if(auth.isAuthenticated() && isManager){
+            Task task = repository.findById(id).orElseThrow(()-> new TaskNotFoundException(id));
+            repository.delete(task);
+        }
+        throw new UserNotHasAuthorityException("usuario não tem permissão: "+ auth.getName());
     }
 
     private TaskCreateResponse toResponseCreateDTO(Task task) {

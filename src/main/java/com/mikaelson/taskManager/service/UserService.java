@@ -8,9 +8,7 @@ import com.mikaelson.taskManager.dto.request.UserRegisterRecord;
 import com.mikaelson.taskManager.dto.response.UserRegisterResponse;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Service;
 
 
@@ -47,7 +45,6 @@ public class UserService {
         user.setUserPassword(passwordEncoder.encode(userDto.password()));
         return toResponseUser(repository.save(user));
     }
-
 
 
     private UserRegisterResponse toResponseUser(User user) {
